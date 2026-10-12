@@ -34,6 +34,70 @@ npm run verify
 
 The project and its GitHub Actions workflows support Node.js 22 or later. Node.js 20 is not used by CI or publishing.
 
+## Quick start: local open-model RAG
+
+The fastest no-fee setup uses [Ollama](https://ollama.com/) locally with the built-in in-memory vector store.
+
+```bash
+ollama serve
+ollama pull nomic-embed-text
+ollama pull llama3.2:3b
+```
+
+In Node-RED, import [`examples/open-models-all-nodes.json`](examples/open-models-all-nodes.json). It creates the **Open Models — All Nodes RAG** tab and includes every SidForge processing node in three readable stages. Configure the **Ollama chat** and **Ollama embeddings** configuration nodes if your runtime is not at `http://127.0.0.1:11434`.
+
+Run **Ingest sample document** first, then **Ask grounded question**. The built-in memory vector store is intentionally cleared when Node-RED restarts; use a persistent vector store before production use.
+
+## How to wire the nodes
+
+### 1. Ingest knowledge
+
+```text
+Source or local Function
+  → Metadata Validator → PII Detector / PII Redactor
+  → Duplicate Detector → Document Versioner → Normalize Document
+  → Chunk Document → Chunk Quality Filter → Embed Chunks → Vector Upsert
+```
+
+Use **Source** for an HTTP API, or start with a Function node that sets `msg.rag.document`. Select an **Embedding Provider** in Embed Chunks and the same **Vector Store** in both Vector Upsert and Retrieve Evidence. Use a collection and namespace that identify the tenant/corpus.
+
+### 2. Retrieve safely
+
+```text
+Question
+  → Query Normalizer → Query Safety → Policy Gate → Tenant Context
+  → Rate Limiter → Idempotency Guard → Retrieve Evidence
+  → ACL Filter → Result Deduplicator → Evidence Gate
+```
+
+Set `msg.rag.tenantId` and `msg.rag.user.roles` before retrieval. Route every output 2 from a safety or access-control node to a safe response, audit, or review path—do not silently continue after a rejection.
+
+### 3. Generate only from evidence
+
+```text
+Evidence Gate (output 1) → Evidence Packer → Grounded Prompt
+  → Generate Answer → Claim Extractor → Citation Validator
+  → Confidence Scorer → Grounding Check → Secret Redactor → Observe
+
+Evidence Gate / Citation Validator / Grounding Check (output 2)
+  → Abstention → Secret Redactor → Observe
+```
+
+Use a **Model Provider** in Generate Answer, keep temperature low for factual answers, and retain the failure path to **Abstention**. The grounding heuristic is a guardrail, not proof of correctness; retain human review for high-risk use cases.
+
+### What each configuration node does
+
+| Configuration node | Select it in | What it controls |
+| --- | --- | --- |
+| Model Provider | Generate Answer | Ollama, vLLM, TGI, LocalAI, llama.cpp, or compatible chat endpoint and default model. |
+| Embedding Provider | Embed Chunks | Local/compatible embedding endpoint and embedding model. |
+| Vector Store | Vector Upsert, Retrieve Evidence | Memory or persistent store endpoint, collection, namespace, and credentials. |
+| Reranker Provider | Retrieve Evidence | Optional local BGE/cross-encoder reranking endpoint. |
+| Cache Provider | Cache-aware composed flows | In-memory, Valkey, or Redis connection details. |
+| Local Model Manager | A flow operation | Lists, verifies, pulls, or health-checks local model runtimes. |
+
+For field-level definitions, output contracts, and each Quality & Operations node, see the complete [node reference](docs/NODES.md) or select a node in Node-RED and open the **Help** sidebar.
+
 ## Node groups
 
 ### Ingestion and preparation
