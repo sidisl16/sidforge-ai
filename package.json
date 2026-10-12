@@ -9,7 +9,7 @@
   "repository": { "type": "git", "url": "git+https://github.com/sidisl16/sidforge-ai.git" },
   "bugs": { "url": "https://github.com/sidisl16/sidforge-ai/issues" },
   "homepage": "https://github.com/sidisl16/sidforge-ai#readme",
-  "engines": { "node": ">=18" },
+  "engines": { "node": ">=22" },
   "node-red": {
     "nodes": {
       "rag-source": "nodes/source.js",

@@ -12,20 +12,17 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node: [18.x, 20.x, 22.x]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 22.x
           cache: npm
       - run: npm ci
       - run: npm run verify
       - run: npm run pack:check
       - uses: actions/upload-artifact@v4
-        if: always() && matrix.node == '20.x'
+        if: always()
         with:
           name: coverage
           path: coverage/

@@ -32,6 +32,8 @@ npm ci
 npm run verify
 ```
 
+The project and its GitHub Actions workflows support Node.js 22 or later. Node.js 20 is not used by CI or publishing.
+
 ## Node groups
 
 ### Ingestion and preparation
@@ -139,7 +141,7 @@ Coverage output is written to `coverage/lcov-report/index.html`. The CI workflow
 
 ## Release and Node-RED publication
 
-Node-RED nodes are distributed through npm. Configure the repository’s `npm-publish` environment with an `NPM_TOKEN` secret permitted to publish `node-red-contrib-sidforge-ai`. Then use **Actions → Publish Node-RED palette → Run workflow**. This is deliberately a manual-only workflow: it runs verification, validates the publishable tarball, and publishes with npm provenance only when `dry_run` is disabled.
+Node-RED nodes are distributed through npm. Create an npm automation/granular access token with permission to publish `node-red-contrib-sidforge-ai`, then add it as the `NPM_TOKEN` secret in this repository’s `npm-publish` environment. Then use **Actions → Publish Node-RED palette → Run workflow**. This is deliberately a manual-only workflow: it runs verification, validates the publishable tarball, checks that the credential is present, and publishes with npm provenance only when `dry_run` is disabled.
 
 After the first public npm publication, the package is eligible for discovery in the Node-RED palette manager. The Flow Library has one remaining one-time manual step: sign in with GitHub at [flows.nodered.org/add/node](https://flows.nodered.org/add/node) and submit `node-red-contrib-sidforge-ai`. The Flow Library requires that interactive sign-in and module-name form submission; GitHub Actions cannot complete it on your behalf. Each successful release action prints this link and package name in its job summary.
 
