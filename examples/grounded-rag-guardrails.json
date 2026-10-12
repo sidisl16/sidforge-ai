@@ -1,0 +1,55 @@
+[
+  {
+    "id": "rag-demo-tab",
+    "type": "tab",
+    "label": "SidForge AI — Grounded RAG guardrails",
+    "disabled": false,
+    "info": "Provider-free sample. Replace the Function node with SidForge retrieval and generation nodes in a real deployment."
+  },
+  {
+    "id": "ask",
+    "type": "inject",
+    "z": "rag-demo-tab",
+    "name": "Ask refund policy",
+    "props": [{ "p": "payload" }],
+    "payload": "When can I request a refund?",
+    "payloadType": "str",
+    "x": 140,
+    "y": 140,
+    "wires": [["evidence"]]
+  },
+  {
+    "id": "evidence",
+    "type": "function",
+    "z": "rag-demo-tab",
+    "name": "Demo retrieval result",
+    "func": "msg.rag = { tenantId: 'demo', retrieval: { selected: [{ id: 'refund-policy-1', score: 0.96, content: 'Refunds may be requested within 30 calendar days.', metadata: { source: 'demo-policy.md' } }] }, answer: { text: 'Refunds may be requested within 30 calendar days.' } };\nreturn msg;",
+    "outputs": 1,
+    "x": 350,
+    "y": 140,
+    "wires": [["prompt"]]
+  },
+  {
+    "id": "prompt",
+    "type": "rag-prompt",
+    "z": "rag-demo-tab",
+    "name": "Build grounded prompt",
+    "query": "payload",
+    "system": "Answer only from evidence. Cite evidence numbers. Abstain when evidence is insufficient.",
+    "x": 580,
+    "y": 140,
+    "wires": [["ground"]]
+  },
+  {
+    "id": "ground",
+    "type": "rag-grounding",
+    "z": "rag-demo-tab",
+    "name": "Check answer grounding",
+    "minGroundedness": "0.55",
+    "x": 810,
+    "y": 140,
+    "wires": [["safe"], ["review"]]
+  },
+  { "id": "safe", "type": "debug", "z": "rag-demo-tab", "name": "Grounded answer", "active": true, "complete": "rag", "x": 1030, "y": 120, "wires": [] },
+  { "id": "review", "type": "debug", "z": "rag-demo-tab", "name": "Review / abstain", "active": true, "complete": "rag", "x": 1030, "y": 180, "wires": [] }
+]
