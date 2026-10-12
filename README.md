@@ -48,6 +48,12 @@ In Node-RED, import [`examples/open-models-all-nodes.json`](examples/open-models
 
 Run **Ingest sample document** first, then **Ask grounded question**. The built-in memory vector store is intentionally cleared when Node-RED restarts; use a persistent vector store before production use.
 
+## PDF example: page-aware local RAG
+
+Import [`examples/pdf-document-rag.json`](examples/pdf-document-rag.json) through **Menu → Import → File**. It creates a clearly spaced **PDF — Local Grounded RAG** tab with three left-to-right lanes: page ingestion/indexing, governed retrieval, and grounded-answer validation.
+
+The palette deliberately does not bundle a PDF binary parser. Replace the highlighted **PDF text extraction boundary** Function with your preferred local parser or extraction service; it must send one `msg.rag.document` message per page, preserving `metadata.page`, source, tenant, and ACL. The rest of the flow is provider-neutral SidForge nodes. Configure local Ollama with `nomic-embed-text` and `llama3.2:3b`, deploy, click **Ingest example PDF pages**, then click **Ask grounded PDF question**.
+
 ## How to wire the nodes
 
 ### 1. Ingest knowledge
