@@ -1,28 +1,77 @@
-name: Publish npm package
+name: Publish Node-RED palette
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      npm_tag:
+        description: npm distribution tag
+        required: true
+        default: latest
+        type: choice
+        options:
+          - latest
+          - next
+      dry_run:
+        description: Validate the npm publish without releasing
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
   id-token: write
 
+concurrency:
+  group: npm-publish-node-red-palette
+  cancel-in-progress: false
+
 jobs:
   publish:
-    if: startsWith(github.event.release.tag_name, 'v')
+    name: Verify and publish npm package
     runs-on: ubuntu-latest
     environment: npm-publish
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Check out selected ref
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 20.x
+          node-version: 22.x
           registry-url: https://registry.npmjs.org
           cache: npm
-      - run: npm ci
-      - run: npm run verify
-      - run: npm version --no-git-tag-version "${{ github.event.release.tag_name }}"
-      - run: npm publish --access public --provenance
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Verify package quality gates
+        run: npm run verify
+
+      - name: Inspect publish artifact
+        run: npm run pack:check
+
+      - name: Validate npm publish
+        if: inputs.dry_run
+        run: npm publish --dry-run --access public --provenance --tag "${{ inputs.npm_tag }}"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish public Node-RED palette
+        if: ${{ !inputs.dry_run }}
+        run: npm publish --access public --provenance --tag "${{ inputs.npm_tag }}"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish next-step summary
+        if: ${{ !inputs.dry_run }}
+        env:
+          PACKAGE_NAME: node-red-contrib-sidforge-ai
+        run: |
+          {
+            echo "## Node-RED palette published"
+            echo
+            echo "- npm package: [\`${PACKAGE_NAME}\`](https://www.npmjs.com/package/${PACKAGE_NAME})"
+            echo "- Flow Library submission: [add this module](https://flows.nodered.org/add/node)"
+            echo
+            echo "The Flow Library requires a one-time interactive GitHub sign-in and module-name submission. Enter \`${PACKAGE_NAME}\` after npm indexing completes."
+          } >> "$GITHUB_STEP_SUMMARY"
