@@ -28,11 +28,11 @@ concurrency:
 jobs:
   publish:
     name: Verify and publish npm package
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment: npm-publish
     steps:
       - name: Check out selected ref
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
